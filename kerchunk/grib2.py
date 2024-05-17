@@ -172,7 +172,10 @@ def scan_grib(
             # Adding computed keys adds a lot that isn't added by cfgrib
             # message_keys.extend(m.computed_keys)
 
-            shape = (m["Ny"], m["Nx"])
+            if m["gridType"] in cfgrib.dataset.GRID_TYPES_2D_NON_DIMENSION_COORDS:
+                shape = (m["Ny"], m["Nx"])
+            else:
+                shape = (m["numberOfDataPoints"])
             # thank you, gribscan
             native_type = eccodes.codes_get_native_type(m.codes_id, "values")
             data_size = eccodes.codes_get_size(m.codes_id, "values")
@@ -280,9 +283,15 @@ def scan_grib(
                     else:
                         dims = [coord]
                         if coord == "latitude":
-                            x = x.reshape(vals.shape)[:, 0].copy()
+                            if  x.reshape(vals.shape).ndim == 1:
+                                x = x.reshape(vals.shape).copy()
+                            else:
+                                x = x.reshape(vals.shape)[:, 0].copy()
                         elif coord == "longitude":
-                            x = x.reshape(vals.shape)[0].copy()
+                            if  x.reshape(vals.shape).ndim == 1:
+                                x = x.reshape(vals.shape).copy()
+                            else:
+                                x = x.reshape(vals.shape)[0].copy()
                         # force inlining of x/y/latitude/longitude coordinates.
                         # since these are derived from analytic formulae
                         # and are not stored in the message
